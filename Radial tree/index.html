@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="//d3js.org/d3.v3.min.js"></script>
+    <script>
+        var nodes = {
+    "name": "Example-1",
+    "children": [
+       {
+        "name": "NODE-1", "children": [
+          { "name": "NODE-11", "relations": ["NODE-141", "NODE-21","NODE-612","NODE-58","NODE-61"], "children": [
+            { "name": "NODE-111" },
+            { "name": "NODE-112" }
+          ] },
+          { "name": "NODE-12", "children": [
+            { "name": "NODE-121" }
+          ] },
+          { "name": "NODE-13", "relations": ["NODE-21"], "children": [
+            { "name": "NODE-131" },
+            { "name": "NODE-132" }
+          ] },
+          { "name": "NODE-14", "relations": ["NODE-21"], "children": [
+            { "name": "NODE-141" }
+          ] }
+        ]
+      },
+      {
+        "name": "NODE-2", "children": [
+          { "name": "NODE-21" },
+          { "name": "NODE-22" },
+          { "name": "NODE-23" },
+          { "name": "NODE-24" },
+          { "name": "NODE-25" },
+          { "name": "NODE-26" },
+          { "name": "NODE-27" },
+          {
+            "name": "NODE-28", "children": [
+              { "name": "NODE-281" },
+              { "name": "NODE-282" },
+              { "name": "NODE-283" },
+              { "name": "NODE-284" },
+              { "name": "NODE-285" },
+              { "name": "NODE-286" }
+            ]
+          }
+        ]
+      },
+      { "name": "NODE-3" },
+      {
+        "name": "NODE-4", "children": [
+          { "name": "NODE-41" },
+          { "name": "NODE-42" },
+          {
+            "name": "NODE-43", "children": [
+              { "name": "NODE-431" },
+              { "name": "NODE-432" },
+              { "name": "NODE-433" },
+              {
+                "name": "NODE-434", "children": [
+                  { "name": "ADD-4341" },
+                  { "name": "ADD-4342" },
+                ]
+              }
+            ]
+          },
+          { "name": "NODE-44" }
+        ]
+      },
+      {
+        "name": "NODE-5", "children": [
+          {
+            "name": "NODE-51", "children": [
+              { "name": "NODE-511" },
+              { "name": "NODE-512" },
+              { "name": "NODE-513" },
+              { "name": "NODE-514" },
+              { "name": "NODE-515" },
+              { "name": "NODE-516" }
+            ]
+          },
+          { "name": "NODE-52" },
+          { "name": "NODE-53" },
+          { "name": "NODE-54" },
+          {
+            "name": "NODE-55", "children": [
+              { "name": "NODE-551" },
+              { "name": "NODE-552" },
+              { "name": "NODE-553" },
+              { "name": "NODE-554" }
+            ]
+          },
+          { "name": "NODE-56" },
+          { "name": "NODE-57" },
+          { "name": "NODE-58" },
+          { "name": "NODE-59" },
+          { "name": "NODE-591" },
+          { "name": "NODE-592" },
+          { "name": "NODE-593" },
+          { "name": "NODE-594" },
+          { "name": "NODE-595" },
+          { "name": "NODE-596" }
+        ]
+      },
+      {
+        "name": "NODE-6", "children": [
+          {
+            "name": "NODE-61", "children": [
+              { "name": "NODE-611" },
+              { "name": "NODE-612" },
+              { "name": "NODE-613" },
+              {
+                "name": "NODE-614", "children": [
+                  { "name": "ADD-6141" },
+                  { "name": "ADD-6142" },
+                ]
+              }
+            ]
+          },
+          { "name": "NODE-62" },
+          { "name": "NODE-63" },
+          { "name": "NODE-64" },
+          { "name": "NODE-65" },
+          { "name": "NODE-66" },
+          { "name": "NODE-67" },
+          { "name": "NODE-68" },
+          { "name": "NODE-69" }
+        ]
+      }
+    ]
+  };
+  
+  var diameter = 800;
+  var margin = { top: 20, right: 120, bottom: 20, left: 120 };
+  var width = diameter;
+  var height = diameter;
+  var i = 0;
+  var duration = 350;
+  var root;
+  
+  var tree = d3.layout.tree()
+    .size([360, diameter / 2 - 120]) // Adjusted size to provide more space for nodes
+    .separation(function (a, b) { return (a.parent == b.parent ? 1.5 : 2) / a.depth; }); // Increased separation between nodes
+  
+  var diagonal = d3.svg.diagonal.radial()
+    .projection(function (d) { return [d.y, d.x / 180 * Math.PI]; });
+  
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + (diameter / 2 + margin.left) + "," + (diameter / 2 + margin.top) + ")"); // Adjusted transform to accommodate margin
+  
+  root = nodes;
+  root.x0 = height / 2;
+  root.y0 = 0;
+  
+  update(root);
+  
+  d3.select(self.frameElement).style("height", "800px");
+  
+  function update(source) {
+    // Compute the new tree layout.
+    var nodes = tree.nodes(root).reverse(),
+      links = tree.links(nodes);
+  
+    // Normalize for fixed-depth.
+    nodes.forEach(function (d) { d.y = d.depth * 120; }); // Increased the multiplication factor to provide more space between nodes
+  
+    // Update the nodes…
+    var node = svg.selectAll("g.node")
+      .data(nodes, function (d) { return d.id || (d.id = ++i); });
+  
+    // Enter any new nodes at the parent's previous position.
+    var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function (d) { return "rotate(" + (source.x0 - 90) + ")translate(" + source.y0 + ")"; })
+      .on("click", click)
+      .on("mouseover", function (d) {
+        highlightConnections(d);
+        d3.select(this).selectAll("circle").style("fill", "red"); // Changed the circle fill color on mouseover
+      })
+      .on("mouseout", function () {
+        d3.selectAll("circle").style("fill", function (d) { return d._children ? "lightsteelblue" : "#fff"; }); // Reset circle fill color on mouseout
+        d3.selectAll("g.node").style("opacity", "1");
+      });
+  
+    nodeEnter.append("circle")
+      .attr("r", 1e-6)
+      .style("fill", function (d) { return d._children ? "lightsteelblue" : "#fff"; });
+  
+    nodeEnter.append("text")
+      .attr("x", 10)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .attr("transform", function (d) { return d.x < 180 ? "translate(0)" : "rotate(180)translate(-" + (d.name.length * 8.5) + ")"; })
+      .text(function (d) { return d.name; })
+      .style("fill-opacity", 1e-6)
+      .style("font-weight", "bold"); // Added bold styling to the node labels
+  
+    // Transition nodes to their new position.
+    var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; });
+  
+    nodeUpdate.select("circle")
+      .attr("r", 8) // Increased circle radius for better visibility
+      .style("fill", function (d) { return d._children ? "lightsteelblue" : "#fff"; });
+  
+    nodeUpdate.select("text")
+      .style("fill-opacity", 1);
+  
+    // Transition exiting nodes to the parent's new position.
+    var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function (d) { return "rotate(" + (source.x - 90) + ")translate(" + source.y + ")"; })
+      .remove();
+  
+    nodeExit.select("circle")
+      .attr("r", 1e-6);
+  
+    nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+  
+    // Update the links…
+    var link = svg.selectAll("path.link")
+      .data(links, function (d) { return d.target.id; });
+  
+    // Enter any new links at the parent's previous position.
+    link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("d", function (d) {
+        var o = { x: source.x0, y: source.y0 };
+        return diagonal({ source: o, target: o });
+      })
+      .style("fill", "none")
+      .style("stroke", "#ccc")
+      .style("stroke-width", "1px"); // Added styling to the links
+  
+    // Transition links to their new position.
+    link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+  
+    // Transition exiting nodes to the parent's new position.
+    link.exit().transition()
+      .duration(duration)
+      .attr("d", function (d) {
+        var o = { x: source.x, y: source.y };
+        return diagonal({ source: o, target: o });
+      })
+      .remove();
+  
+    // Stash the old positions for transition.
+    nodes.forEach(function (d) {
+      d.x0 = d.x;
+      d.y0 = d.y;
+    });
+  }
+  
+  // Toggle children on click.
+  function click(d) {
+    if (d.children) {
+      d._children = d.children;
+      d.children = null;
+    } else {
+      d.children = d._children;
+      d._children = null;
+    }
+    update(d);
+  }
+  
+  // Check if two nodes have a relation
+  function hasRelation(a, b) {
+    return a.relations && a.relations.includes(b.name);
+  }
+  
+  // Highlight connections of the given node
+  function highlightConnections(d) {
+    d3.selectAll("path.link")
+      .style("stroke", "#ccc")
+      .filter(function (link) {
+        return link.source === d || link.target === d;
+      })
+      .style("stroke", "red");
+  
+    d3.selectAll("g.node")
+      .style("opacity", "0.3")
+      .filter(function (node) {
+        return node === d || isConnected(d, node) || hasRelation(d, node);
+      })
+      .style("opacity", "1");
+  
+    d3.selectAll("text.node-label")
+      .style("fill", "#000")
+      .filter(function (node) {
+        return node.parent === d || (d.parent && node.parent === d.parent) || (node.children && node.children.includes(d));
+      })
+      .style("fill", "red");
+  }
+  
+  // Check if two nodes are connected
+  function isConnected(a, b) {
+    return (
+      a.parent === b || // b is a direct parent or child of a
+      b.parent === a ||
+      a.parent === b.parent || // a and b have the same parent
+      a === b // a and b are the same node
+    );
+  }
+    </script>
+
+</body>
+</html>
